@@ -1,5 +1,7 @@
 import path from 'path';
-import { CfnParameter, NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { CfnParameter, CfnWaitCondition, NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { CfnWaitConditionHandle } from 'aws-cdk-lib/aws-cloudformation';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import { EnableControltower } from '../constructs/enable-controltower';
@@ -24,5 +26,12 @@ export class ControlTowerStack extends NestedStack {
       logArchiveAwsAccountEmail: logArchiveAWSAccountEmail.valueAsString,
       auditAwsAccountEmail: auditAWSAccountEmail.valueAsString,
     });
+
+    const controlTowerWaitHandle = new CfnWaitConditionHandle(this, 'ControlTowerReadyHandle');
+    const controlTowerReadyHandleWaitCondition = new CfnWaitCondition(this, 'ControlTowerReadyHandleWaitCondition', {
+      handle: controlTowerWaitHandle.ref,
+      timeout: '7200',
+    });
+
   }
 }

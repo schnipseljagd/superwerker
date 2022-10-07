@@ -1,4 +1,5 @@
 import os
+
 from awsapilib import ControlTower
 
 
@@ -13,10 +14,10 @@ def handler(event, _):
 
     tower = ControlTower(control_tower_role_arn)
 
-    logging_account_email = event.ResourceProperties.get(
+    logging_account_email = event['ResourceProperties'].get(
         'LOG_ARCHIVE_AWS_ACCOUNT_EMAIL'
     )
-    audit_account_email = event.ResourceProperties.get(
+    audit_account_email = event['ResourceProperties'].get(
         'AUDIT_AWS_ACCOUNT_EMAIL'
     )
     if RequestType == CREATE:
