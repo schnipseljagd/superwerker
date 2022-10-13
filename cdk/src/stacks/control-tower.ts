@@ -1,18 +1,12 @@
 import path from 'path';
-import { CfnParameter, CfnWaitCondition, NestedStack, NestedStackProps } from 'aws-cdk-lib';
-import { CfnWaitConditionHandle } from 'aws-cdk-lib/aws-cloudformation';
+import { Arn, aws_events as events, aws_events_targets as targets, aws_iam as iam, CfnParameter, CfnWaitCondition, CfnWaitConditionHandle, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import { EnableControltower } from '../constructs/enable-controltower';
 
 export class ControlTowerStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-    new CfnInclude(this, 'SuperwerkerTemplate', {
-      templateFile: path.join(__dirname, '..', '..', '..', 'templates', 'control-tower.yaml'),
-    });
-
 
     const logArchiveAWSAccountEmail = new CfnParameter(this, 'LogArchiveAWSAccount', {
       type: 'String',
@@ -21,17 +15,79 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
-
     new EnableControltower(this, 'EnableControltower', {
       logArchiveAwsAccountEmail: logArchiveAWSAccountEmail.valueAsString,
       auditAwsAccountEmail: auditAWSAccountEmail.valueAsString,
     });
 
-    const controlTowerWaitHandle = new CfnWaitConditionHandle(this, 'ControlTowerReadyHandle');
-    const controlTowerReadyHandleWaitCondition = new CfnWaitCondition(this, 'ControlTowerReadyHandleWaitCondition', {
-      handle: controlTowerWaitHandle.ref,
+    const controlTowerReadyHandle = new CfnWaitConditionHandle(this, 'ControlTowerReadyHandle');
+    new CfnWaitCondition(this, 'ControlTowerReadyHandleWaitCondition', {
+      handle: controlTowerReadyHandle.ref,
       timeout: '7200',
     });
 
+    const superwerkerBootstrapFunction = new NodejsFunction(this, 'SuperwerkerBootstrapFunction', {
+      entry: path.join(__dirname, '..', 'functions', 'superwerker-bootstrap-function.ts'),
+      environment: {
+        SIGNAL_URL: controlTowerReadyHandle.ref,
+      },
+    });
+    superwerkerBootstrapFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ssm:PutParameter'],
+        resources: [
+          Arn.format(
+            {
+              service: 'ssm',
+              resource: 'parameter',
+              resourceName: 'superwerker*',
+            },
+            Stack.of(this),
+          ),
+        ],
+      }),
+    );
+    superwerkerBootstrapFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['events:PutEvents'],
+        resources: [
+          Arn.format(
+            {
+              service: 'event',
+              resource: 'event-bus',
+              resourceName: 'default',
+            },
+            Stack.of(this),
+          ),
+        ],
+      }),
+    );
+
+
+    const eventRule = new events.Rule(this, 'Call', {
+      eventPattern: {
+        detailType: [
+          'AWS Service Event via CloudTrail',
+        ],
+        source: [
+          'aws.controltower',
+        ],
+        detail: {
+          serviceEventDetails: {
+            setupLandingZoneStatus: {
+              state: [
+                'SUCCEEDED',
+              ],
+            },
+          },
+          eventName: [
+            'SetupLandingZone',
+          ],
+        },
+      },
+    });
+    eventRule.addTarget(new targets.LambdaFunction(superwerkerBootstrapFunction, {
+      event: events.RuleTargetInput.fromEventPath('$.detail.serviceEventDetails.setupLandingZoneStatus'),
+    }));
   }
 }

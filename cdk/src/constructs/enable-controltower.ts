@@ -38,7 +38,7 @@ class EnableControltowerProvider extends Construct {
    */
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.generate-email-address-provider';
+    const id = 'superwerker.enable-controltower';
     const x = stack.node.tryFindChild(id) as EnableControltowerProvider || new EnableControltowerProvider(stack, id);
     return x.provider.serviceToken;
   }
@@ -49,12 +49,15 @@ class EnableControltowerProvider extends Construct {
     super(scope, id);
 
     const enableControltowerFn = new pythonLambda.PythonFunction(this, 'enable-controltower-on-event', {
-      entry: path.join(__dirname, '..', 'functions', 'enable-controltower'),
+      entry: path.join(__dirname, '..', 'functions', 'enable_controltower'),
       handler: 'handler',
       runtime: lambda.Runtime.PYTHON_3_9,
     });
-    const awsapilibRole = new iam.Role(this, 'AwsApilibRole', {
+    const awsApilibRole = new iam.Role(this, 'AwsApilibRole', {
       assumedBy: enableControltowerFn.role as iam.Role,
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'),
+      ],
     });
     enableControltowerFn.addToRolePolicy(
       new iam.PolicyStatement({
@@ -62,12 +65,12 @@ class EnableControltowerProvider extends Construct {
           'sts:AssumeRole',
         ],
         resources: [
-          awsapilibRole.roleArn,
+          awsApilibRole.roleArn,
         ],
       }),
     );
 
-    enableControltowerFn.addEnvironment('AWSAPILIB_CONTROL_TOWER_ROLE_ARN', awsapilibRole.roleArn);
+    enableControltowerFn.addEnvironment('AWSAPILIB_CONTROL_TOWER_ROLE_ARN', awsApilibRole.roleArn);
 
     this.provider = new cr.Provider(this, 'enable-controltower-provider', {
       onEventHandler: enableControltowerFn,
