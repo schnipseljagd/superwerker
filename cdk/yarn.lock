@@ -5147,6 +5147,11 @@ typedarray-to-buffer@^3.1.5:
   dependencies:
     is-typedarray "^1.0.0"
 
+typescript-retry-decorator@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/typescript-retry-decorator/-/typescript-retry-decorator-2.1.0.tgz#765855a2aadbe819cae8394701b45af9aa999b14"
+  integrity sha512-96MZ18iGcq3HKqnUEhXbE2fO8bPZYgP+NtZB35XCkWyaZnKdukSdg/BY9rq5SaBfjOAToExZgFHvbAEa8OjkNg==
+
 typescript@^4.8.2:
   version "4.8.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.8.2.tgz#e3b33d5ccfb5914e4eeab6699cf208adee3fd790"
