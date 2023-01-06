@@ -40,17 +40,6 @@ async function rootId() {
   return (await root()).Id!;
 }
 
-//def exception_handling(function):
-//def catch(event, context):
-//try:
-//function(event, context)
-//except Exception as e:
-//console.log(e)
-//console.log(event)
-//cfnresponse.send(event, context, cfnresponse.FAILED, {})
-
-//return catch
-
 export async function policyAttached(policyId: string): Promise<boolean> {
   const result = await organizations.listPoliciesForTarget({
     TargetId: await rootId(),
