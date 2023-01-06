@@ -17,6 +17,10 @@ async function root() {
   return roots.Roots![0];
 }
 
+export async function rootId() {
+  return (await root()).Id!;
+}
+
 class RetryableFn {
   @Retryable({
     maxAttempts: 5,
@@ -34,10 +38,6 @@ class RetryableFn {
   ): Promise<T> {
     return fn(...args).promise();
   }
-}
-
-async function rootId() {
-  return (await root()).Id!;
 }
 
 export async function policyAttached(policyId: string): Promise<boolean> {
@@ -106,18 +106,18 @@ export async function handler(event: any, _context: any) {
               TargetId: await rootId(),
             },
           );
-          await RetryableFn.withRetry(
-            organizations.deletePolicy, {
-              PolicyId: policyId,
-            },
-          );
-        } else {
-          console.log(`${policyId} is no valid PolicyId`);
         }
+        await RetryableFn.withRetry(
+          organizations.deletePolicy, {
+            PolicyId: policyId,
+          },
+        );
       } else {
-        throw new Error(`Unexpected RequestType: ${requestType}`);
+        console.log(`${policyId} is no valid PolicyId`);
       }
+      break;
+    default:
+      throw new Error(`Unexpected RequestType: ${requestType}`);
   }
-
   return {};
 }
