@@ -18,17 +18,6 @@ export class SecurityHubStack extends NestedStack {
           },
         },
         mainSteps: [{
-          name: 'GetDetectorId',
-          action: 'aws:executeAwsApi',
-          inputs: {
-            Service: 'securityhub',
-            Api: 'ListDetectors', // TODO all detectors
-          },
-          outputs: [{
-            Name: 'DetectorId',
-            Selector: '$.DetectorIds[0]',
-          }],
-        }, {
           name: 'ManagementAWSAccount',
           action: 'aws:executeAwsApi',
           inputs: {
@@ -57,8 +46,7 @@ export class SecurityHubStack extends NestedStack {
           action: 'aws:executeAwsApi',
           inputs: {
             Service: 'securityhub',
-            Api: 'CreateMembers',
-            DetectorId: '{{ GetDetectorId.DetectorId }}',
+            Api: 'CreateMembers', // NOTE: same API as GD, except DetectorId
             AccountDetails: [{
               AccountId: '{{ ManagementAWSAccountId }}',
               Email: '{{ ManagementAWSAccount.EmailAddress }}',
@@ -73,7 +61,6 @@ export class SecurityHubStack extends NestedStack {
           inputs: {
             Service: 'securityhub',
             Api: 'UpdateOrganizationConfiguration',
-            DetectorId: '{{ GetDetectorId.DetectorId }}',
             AutoEnable: true,
           },
         }],
@@ -87,9 +74,8 @@ export class SecurityHubStack extends NestedStack {
           statements: [
             new iam.PolicyStatement({
               actions: [
-                'securityhub:EnableOrganizationAdminAccount', // TODO permissions from IAM
+                'securityhub:EnableOrganizationAdminAccount', // Note same permissions from IAM
                 'securityhub:ListOrganizationAdminAccounts',
-                'securityhub:CreateDetector',
                 'organizations:EnableAWSServiceAccess',
                 'organizations:ListAWSServiceAccessForOrganization',
                 'organizations:ListDelegatedAdministrators',
@@ -225,7 +211,7 @@ export class SecurityHubStack extends NestedStack {
           action: 'aws:waitForAwsResourceProperty',
           inputs: {
             Service: 'organizations',
-            Api: 'ListDelegatedAdministrators', // TODO does it work like this?
+            Api: 'ListDelegatedAdministrators', // TODO in GD this API is not listed as well: https://docs.aws.amazon.com/guardduty/latest/APIReference/API_EnableOrganizationAdminAccount.html
             ServicePrincipal: 'securityhub.amazonaws.com',
             PropertySelector: '$.DelegatedAdministrators[0].Status',
             DesiredValues: [
@@ -233,12 +219,12 @@ export class SecurityHubStack extends NestedStack {
             ],
           },
         }, {
-          name: 'EnableSecurityHubInManagementAccount',
+          name: 'EnableSecurityHubInManagementAccount', // which we are running in
           action: 'aws:executeAwsApi',
           inputs: {
             Service: 'securityhub',
-            Api: 'CreateDetector',
-            Enable: true,
+            Api: 'EnableSecurityHub', // Note in GD it is 'CreateDetector'
+            EnableDefaultStandards: true, // which is also the default
           },
         }, {
           name: 'SleepEnableSecurityHubExistingAccounts', // TODO: SecurityHub Org Admin needs to settle first, give it some time', yes?
