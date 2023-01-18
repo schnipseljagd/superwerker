@@ -19,8 +19,18 @@ export class LivingDocumentationStack extends NestedStack {
       },
     });
 
+    const ssmParametersDescribe = new iam.PolicyStatement({
+      actions: ['ssm:DescribeParameters'],
+      resources: ['*'],
+      effect: iam.Effect.ALLOW,
+    });
+
     const ssmParameterRead = new iam.PolicyStatement({
-      actions: ['ssm:GetParameter'],
+      actions: [
+        'ssm:GetParameters',
+        'ssm:GetParameter',
+        'ssm:GetParametersByPath',
+      ],
       resources: [Arn.format({
         partition: this.partition,
         service: 'ssm',
@@ -63,6 +73,7 @@ export class LivingDocumentationStack extends NestedStack {
     dashboardGeneratorFunction.role?.attachInlinePolicy(
       new iam.Policy(this, 'dashboard-generator-function', {
         statements: [
+          ssmParametersDescribe,
           ssmParameterRead,
           cloudwatchPutDashboard,
           cloudwatchDescribeAlarms,
