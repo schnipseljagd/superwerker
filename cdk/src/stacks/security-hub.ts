@@ -1,6 +1,20 @@
 import { Arn, aws_events as events, aws_iam as iam, aws_ssm as ssm, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 
+
+// ✕ () resource: "EnableSecurityHub" (3 ms)
+// ✕ () resource: "EnableSecurityHubInOrgAccountRole" (1 ms)
+// ✕ () resource: "EnableSecurityHubInOrgAccount" (1 ms)
+// ✕ () resource: "InviteSecurityHubMember" (2 ms)
+// ✕ () resource: "AcceptSecurityHubInvitation" (1 ms)
+// ✕ () resource: "EnableSecurityHubInOrgAccountAndAddAsMemberRole" (1 ms)
+// ✕ () resource: "EnableSecurityHubInOrgAccountAndAddAsMember" (2 ms)
+// ✕ () resource: "CreateLandingZoneEnableSecurityHubRole" (5 ms)
+// ✕ () resource: "CreateLandingZoneEnableSecurityHub" (1 ms)
+// ✓ () resource: "SSMAutomationExecutionRoleforCWEvents"
+// ✓ () resource: "LandingZoneSetupFinishedTrigger"
+// ✕ () resource: "CreateManagedAccountTrigger" (1 ms)
+
 export class SecurityHubStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
