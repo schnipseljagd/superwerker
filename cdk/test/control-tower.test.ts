@@ -59,7 +59,7 @@ describe('resources', () => {
     }
 
     // check that parameters match the original ones
-    if (resourceProps.Properties.Parameters) {
+    if (resourceProps?.Properties?.Parameters) {
       for (const param of Object.keys(resourceProps.Properties.Parameters)) {
         expect(Template.fromStack(stack).toJSON().Resources).toHaveProperty([resource, 'Properties', 'Parameters', param]);
       }
