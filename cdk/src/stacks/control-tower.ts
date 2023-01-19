@@ -1,5 +1,5 @@
 import path from 'path';
-import { Arn, aws_events as events, aws_events_targets as targets, aws_iam as iam, CfnParameter, CfnWaitCondition, CfnWaitConditionHandle, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
+import { Arn, aws_events as events, aws_events_targets as targets, aws_iam as iam, aws_lambda as lambda, CfnParameter, CfnWaitCondition, CfnWaitConditionHandle, NestedStack, NestedStackProps, Stack } from 'aws-cdk-lib';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 import { EnableControltower } from '../constructs/enable-controltower';
@@ -15,7 +15,7 @@ export class ControlTowerStack extends NestedStack {
       type: 'String',
     });
 
-    new EnableControltower(this, 'EnableControltower', {
+    new EnableControltower(this, 'SetupControlTower', {
       logArchiveAwsAccountEmail: logArchiveAWSAccountEmail.valueAsString,
       auditAwsAccountEmail: auditAWSAccountEmail.valueAsString,
     });
@@ -32,6 +32,7 @@ export class ControlTowerStack extends NestedStack {
         SIGNAL_URL: controlTowerReadyHandle.ref,
       },
     });
+    (superwerkerBootstrapFunction.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SuperwerkerBootstrapFunction');
     superwerkerBootstrapFunction.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ['ssm:PutParameter'],
@@ -62,7 +63,6 @@ export class ControlTowerStack extends NestedStack {
         ],
       }),
     );
-
 
     const eventRule = new events.Rule(this, 'Call', {
       eventPattern: {
