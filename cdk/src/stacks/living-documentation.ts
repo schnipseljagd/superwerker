@@ -10,7 +10,7 @@ export class LivingDocumentationStack extends NestedStack {
     super(scope, id, props);
 
     // DashboardGeneratorFunction
-    const dashboardGeneratorFunction = new pythonLambda.PythonFunction(this, 'dashboard-generator-fn', {
+    const dashboardGeneratorFunction = new pythonLambda.PythonFunction(this, 'DashboardGeneratorFunction', {
       entry: path.join(__dirname, '..', 'functions', 'living_documentation_dashboard_generator'),
       handler: 'handler',
       runtime: lambda.Runtime.PYTHON_3_9,
@@ -18,6 +18,8 @@ export class LivingDocumentationStack extends NestedStack {
         SUPERWERKER_DOMAIN: props.parameters!.SuperwerkerDomain,
       },
     });
+
+    (dashboardGeneratorFunction.node.defaultChild as lambda.CfnFunction).overrideLogicalId('DashboardGeneratorFunction');
 
     const ssmParametersDescribe = new iam.PolicyStatement({
       actions: ['ssm:DescribeParameters'],
