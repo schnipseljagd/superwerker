@@ -1,6 +1,4 @@
-// import path from 'path';
 import { Arn, CfnCondition, CfnParameter, Fn, NestedStack, NestedStackProps } from 'aws-cdk-lib';
-// import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import { AttachSCP } from '../constructs/attach-scp';
 import { EnableSCP } from '../constructs/enable-scp';
@@ -8,9 +6,6 @@ import { EnableSCP } from '../constructs/enable-scp';
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
     super(scope, id, props);
-    // new CfnInclude(this, 'SuperwerkerTemplate', {
-    //   templateFile: path.join(__dirname, '..', '..', '..', 'templates', 'service-control-policies.yaml'),
-    // });
 
     const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
       allowedValues: ['true', 'false'],

@@ -9,7 +9,6 @@ import {
   Stack,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { ATTACH, POLICY } from '../functions/enable-scp';
 
 
 export class EnableSCP extends Construct {
@@ -45,7 +44,7 @@ class EnableSCPProvider extends Construct {
       entry: path.join(__dirname, '..', 'functions', 'enable-scp.ts'),
       runtime: lambda.Runtime.NODEJS_16_X,
     });
-    (enableSCPFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPCustomResource');
+    (enableSCPFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPEnableCustomResource');
 
     enableSCPFn.role!.addToPrincipalPolicy(
       new iam.PolicyStatement({
