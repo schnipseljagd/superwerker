@@ -7,13 +7,12 @@ import {
   CustomResource,
   custom_resources as cr,
   Stack,
-  CfnCondition,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { ATTACH, POLICY } from '../functions/attach-scp';
 
 
-export interface AttachSCPProps {
+export interface EnableSCPProps {
   /**
    * The policy to create
    */
@@ -25,31 +24,25 @@ export interface AttachSCPProps {
    * @default: true
    */
   readonly attach?: boolean;
-
-  /**
-   * Only attach SCP if condition is true
-   */
-  readonly condition: CfnCondition;
 }
 
-export class AttachSCP extends Construct {
-  constructor(scope: Construct, id: string, props: AttachSCPProps) {
+export class EnableSCP extends Construct {
+  constructor(scope: Construct, id: string, props: EnableSCPProps) {
     super(scope, id);
 
-    const resource = new CustomResource(this, 'AttachSCPResource', {
-      serviceToken: AttachSCPProvider.getOrCreate(this),
-      resourceType: 'Custom::AttachSCP',
+    const resource = new CustomResource(this, 'EnableSCPResource', {
+      serviceToken: EnableSCPProvider.getOrCreate(this),
+      resourceType: 'Custom::EnableSCP',
       properties: {
         [POLICY]: props.policy,
         [ATTACH]: props.attach ?? true,
       },
     });
     (resource.node.defaultChild as CfnCustomResource).overrideLogicalId(id);
-    (resource.node.defaultChild as CfnCustomResource).cfnOptions.condition = props.condition;
   }
 }
 
-class AttachSCPProvider extends Construct {
+class EnableSCPProvider extends Construct {
 
   /**
    * Returns the singleton provider.
@@ -57,8 +50,8 @@ class AttachSCPProvider extends Construct {
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
     const id = 'superwerker.attach-scp';
-    const x = stack.node.tryFindChild(id) as AttachSCPProvider ||
-      new AttachSCPProvider(stack, id);
+    const x = stack.node.tryFindChild(id) as EnableSCPProvider ||
+      new EnableSCPProvider(stack, id);
     return x.provider.serviceToken;
   }
 
@@ -66,13 +59,13 @@ class AttachSCPProvider extends Construct {
 
   constructor(scope: Construct, id: string) {
     super(scope, id);
-    const attachSCPFn = new nodejs.NodejsFunction(this, id, {
+    const enableSCPFn = new nodejs.NodejsFunction(this, id, {
       entry: path.join(__dirname, '..', 'functions', 'attach-scp.ts'),
       runtime: lambda.Runtime.NODEJS_16_X,
     });
-    (attachSCPFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPCustomResource');
+    (enableSCPFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPCustomResource');
 
-    attachSCPFn.role!.addToPrincipalPolicy(
+    enableSCPFn.role!.addToPrincipalPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: [
@@ -92,7 +85,7 @@ class AttachSCPProvider extends Construct {
     );
 
     this.provider = new cr.Provider(this, 'attach-scp', {
-      onEventHandler: attachSCPFn,
+      onEventHandler: enableSCPFn,
     });
   }
 }

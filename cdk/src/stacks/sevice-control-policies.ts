@@ -1,8 +1,9 @@
 // import path from 'path';
-import { Arn, Fn, NestedStack, NestedStackProps } from 'aws-cdk-lib';
+import { Arn, CfnCondition, CfnParameter, Fn, NestedStack, NestedStackProps } from 'aws-cdk-lib';
 // import { CfnInclude } from 'aws-cdk-lib/cloudformation-include';
 import { Construct } from 'constructs';
 import { AttachSCP } from '../constructs/attach-scp';
+import { EnableSCP } from '../constructs/enable-scp';
 
 export class ServiceControlPoliciesStack extends NestedStack {
   constructor(scope: Construct, id: string, props: NestedStackProps) {
@@ -11,6 +12,29 @@ export class ServiceControlPoliciesStack extends NestedStack {
     //   templateFile: path.join(__dirname, '..', '..', '..', 'templates', 'service-control-policies.yaml'),
     // });
 
+    const includeSecurityHub = new CfnParameter(this, 'IncludeSecurityHub', {
+      allowedValues: ['true', 'false'],
+      type: 'String',
+    });
+    const includeSecurityHubCondition = new CfnCondition(this, 'IncludeSecurityHubCondition', {
+      expression: Fn.conditionEquals(includeSecurityHub, 'true'),
+    });
+
+    const includeBackup = new CfnParameter(this, 'IncludeBackup', {
+      allowedValues: ['true', 'false'],
+      type: 'String',
+    });
+    const includeBackupCondition = new CfnCondition(this, 'IncludeBackupCondition', {
+      expression: Fn.conditionEquals(includeBackup, 'true'),
+    });
+
+    const rolloutScpCondition = new CfnCondition(this, 'RolloutSCPs', {
+      // TODO: should this be a conditionOr?
+      expression: Fn.conditionAnd(
+        Fn.conditionEquals(includeSecurityHubCondition, 'true'),
+        Fn.conditionEquals(includeBackupCondition, 'true'),
+      ),
+    });
 
     const securityHubPolicyStatement = {
       Condition: {
@@ -87,16 +111,17 @@ export class ServiceControlPoliciesStack extends NestedStack {
       Sid: 'SWProtectBackup',
     };
 
+
     const policyStatements = Fn.join(
       ',',
       [
         Fn.conditionIf(
-          'IncludeSecurityHub',
+          'IncludeSecurityHubCondition',
           securityHubPolicyStatement,
           Fn.ref('AWS::NoValue'),
         ).toString(),
         Fn.conditionIf(
-          'IncludeBackup',
+          'IncludeBackupCondition',
           backupPolicyStatement,
           Fn.ref('AWS::NoValue'),
         ).toString(),
@@ -104,6 +129,18 @@ export class ServiceControlPoliciesStack extends NestedStack {
     );
 
     new AttachSCP(this, 'SCPBaseline', {
+      policy: Fn.sub(`{
+              "Version": "2012-10-17",
+              "Statement": [
+                  \${Statements}
+              ]
+          }`, {
+        Statements: policyStatements,
+      }),
+      condition: rolloutScpCondition,
+    });
+
+    new EnableSCP(this, 'SCPEnable', {
       policy: Fn.sub(`{
               "Version": "2012-10-17",
               "Statement": [
