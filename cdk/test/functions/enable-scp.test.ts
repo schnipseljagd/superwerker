@@ -65,4 +65,35 @@ describe('enable SCPs', () => {
       PolicyType: SCP,
     });
   });
+
+  it('should not enable SCPs if already enabled', async () => {
+    const expectedRoot = {
+      Id: 'rootId',
+      Arn: 'fake:arn',
+      Name: 'Test Name',
+      PolicyTypes: [{
+        Type: SCP,
+        Status: 'ENABLED',
+      }],
+    };
+    spyOrganizationsListRoots.mockImplementation(() => ({
+      promise() {
+        return Promise.resolve({
+          Roots: [
+            expectedRoot,
+          ],
+        });
+      },
+    }));
+    spyOrganizationsEnablePolicyType.mockImplementation(() => ({
+      promise() {
+        return Promise.resolve();
+      },
+    }));
+
+    await enableServiceControlPolicies({
+      RequestType: 'Create',
+    }, {});
+    expect( spyOrganizationsEnablePolicyType).not.toHaveBeenCalled();
+  });
 });
