@@ -140,15 +140,6 @@ export class ServiceControlPoliciesStack extends NestedStack {
       condition: rolloutScpCondition,
     });
 
-    new EnableSCP(this, 'SCPEnable', {
-      policy: Fn.sub(`{
-              "Version": "2012-10-17",
-              "Statement": [
-                  \${Statements}
-              ]
-          }`, {
-        Statements: policyStatements,
-      }),
-    });
+    new EnableSCP(this, 'SCPEnable');
   }
 }

@@ -9,34 +9,16 @@ import {
   Stack,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { ATTACH, POLICY } from '../functions/attach-scp';
+import { ATTACH, POLICY } from '../functions/enable-scp';
 
-
-export interface EnableSCPProps {
-  /**
-   * The policy to create
-   */
-  readonly policy: string;
-
-  /**
-   * If set to true, the created policy will also be attached
-   *
-   * @default: true
-   */
-  readonly attach?: boolean;
-}
 
 export class EnableSCP extends Construct {
-  constructor(scope: Construct, id: string, props: EnableSCPProps) {
+  constructor(scope: Construct, id: string) {
     super(scope, id);
 
     const resource = new CustomResource(this, 'EnableSCPResource', {
       serviceToken: EnableSCPProvider.getOrCreate(this),
       resourceType: 'Custom::EnableSCP',
-      properties: {
-        [POLICY]: props.policy,
-        [ATTACH]: props.attach ?? true,
-      },
     });
     (resource.node.defaultChild as CfnCustomResource).overrideLogicalId(id);
   }
@@ -49,7 +31,7 @@ class EnableSCPProvider extends Construct {
    */
   public static getOrCreate(scope: Construct) {
     const stack = Stack.of(scope);
-    const id = 'superwerker.attach-scp';
+    const id = 'superwerker.enable-scp';
     const x = stack.node.tryFindChild(id) as EnableSCPProvider ||
       new EnableSCPProvider(stack, id);
     return x.provider.serviceToken;
@@ -60,23 +42,17 @@ class EnableSCPProvider extends Construct {
   constructor(scope: Construct, id: string) {
     super(scope, id);
     const enableSCPFn = new nodejs.NodejsFunction(this, id, {
-      entry: path.join(__dirname, '..', 'functions', 'attach-scp.ts'),
+      entry: path.join(__dirname, '..', 'functions', 'enable-scp.ts'),
       runtime: lambda.Runtime.NODEJS_16_X,
     });
     (enableSCPFn.node.defaultChild as lambda.CfnFunction).overrideLogicalId('SCPCustomResource');
 
     enableSCPFn.role!.addToPrincipalPolicy(
       new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
         actions: [
-          'organizations:CreatePolicy',
-          'organizations:UpdatePolicy',
-          'organizations:DeletePolicy',
-          'organizations:AttachPolicy',
-          'organizations:DetachPolicy',
+          'organizations:EnablePolicyType',
+          'organizations:DisablePolicyType',
           'organizations:ListRoots',
-          'organizations:ListPolicies',
-          'organizations:ListPoliciesForTarget',
         ],
         resources: [
           '*',
@@ -84,7 +60,7 @@ class EnableSCPProvider extends Construct {
       }),
     );
 
-    this.provider = new cr.Provider(this, 'attach-scp', {
+    this.provider = new cr.Provider(this, 'enable-scp', {
       onEventHandler: enableSCPFn,
     });
   }
