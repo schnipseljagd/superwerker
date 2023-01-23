@@ -45,18 +45,18 @@ export class SuperwerkerStack extends Stack {
 
     const domain = new CfnParameter(this, 'Domain', {
       type: 'String',
-      description: 'Domain used for root mail feature',
+      description: 'Domain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
     });
 
     const subdomain = new CfnParameter(this, 'Subdomain', {
       type: 'String',
-      description: 'Subdomain used for root mail feature',
+      description: 'Subdomain used for root mail feature. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: 'aws',
     });
 
     const notificationsMail = new CfnParameter(this, 'NotificationsMail', {
       type: 'String',
-      description: 'Mail address used for notifications',
+      description: 'Mail address used for notifications. Please see https://github.com/superwerker/superwerker/blob/main/README.md#technical-faq for more information',
       default: '',
       allowedPattern: '(^$|^.*@.*\\..*$)',
     });
